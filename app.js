@@ -403,11 +403,20 @@ function showCameraError(err) {
   placeholderEl.classList.remove('hidden');
   appState.isCameraRunning = false;
   
-  if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-    placeholderEl.querySelector('p').innerHTML = "Camera permission denied.<br><small>Please enable camera access in your browser settings to trace sketches.</small>";
-  } else {
-    placeholderEl.querySelector('p').innerHTML = "Could not access back camera.<br><small>We will fallback to default browser video constraints.</small>";
+  let msg = "Could not access camera.";
+  if (err) {
+    msg += `<br><small style="color: #ff3b30; font-family: monospace; display: block; margin: 8px 0;">[Error - ${err.name}]: ${err.message}</small>`;
   }
+  
+  if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+    msg += "<small>Camera permission was denied. Please allow camera access in your browser site settings and reload the page.</small>";
+  } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    msg += "<br><small style='color: #ffcc00; display: block; margin-top: 8px;'>⚠️ WARNING: Browsers block camera access on non-secure connections (HTTP). Please open the secure HTTPS link on your phone: <strong>https://savindu-krishan.github.io/artie-sketch/</strong></small>";
+  } else {
+    msg += "<small>Please make sure no other app is using the camera, and refresh the page.</small>";
+  }
+  
+  placeholderEl.querySelector('p').innerHTML = msg;
 }
 
 async function flipCamera() {
