@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="50" cy="53" r="32" />
+  <!-- Ears -->
+  <path d="M24 28c-5-5-14-1-14 7s7 11 11 7" fill="black" />
+  <path d="M76 28c5-5 14-1 14 7s-7 11-11 7" fill="black" />
+  <!-- Eyes -->
+  <ellipse cx="37" cy="48" rx="7" ry="10" fill="black" />
+  <ellipse cx="63" cy="48" rx="7" ry="10" fill="black" />
+  <circle cx="37" cy="46" r="2.5" fill="#fff" />
+  <circle cx="63" cy="46" r="2.5" fill="#fff" />
+  <!-- Nose / Mouth -->
+  <polygon points="50,58 46,55 54,55" fill="black" />
+  <path d="M47 62c1 2 3 2 3 0s2-2 3 0" />
+  <!-- Cheeks -->
+  <circle cx="24" cy="56" r="3" opacity="0.3" fill="black" />
+  <circle cx="76" cy="56" r="3" opacity="0.3" fill="black" />
+</svg>

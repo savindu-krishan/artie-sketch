@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M50 30v40M48 28c0-3 2-5 2-5s2 2 2 5M46 25c-3-5-8-6-10-2M54 25c3-5 8-6 10-2" />
+  <!-- Left Wings -->
+  <path d="M48 35C35 15 10 18 15 45c3 15 20 15 33 5" />
+  <path d="M48 48C35 52 20 68 25 78c5 8 18 2 23-15" />
+  <!-- Right Wings -->
+  <path d="M52 35C65 15 90 18 85 45c-3 15-20 15-33 5" />
+  <path d="M52 48C65 52 80 68 75 78c-5 8-18 2-23-15" />
+  <circle cx="32" cy="38" r="2" fill="black" />
+  <circle cx="68" cy="38" r="2" fill="black" />
+</svg>

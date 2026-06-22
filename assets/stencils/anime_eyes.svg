@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Left Eye -->
+  <path d="M10 42c5-15 20-22 35-15 10 5 13 15 13 15" />
+  <path d="M13 46c3 8 12 14 22 12 8-2 13-8 13-12" />
+  <ellipse cx="32" cy="41" rx="9" ry="13" fill="black" />
+  <ellipse cx="29" cy="35" rx="3.5" ry="4.5" fill="#fff" />
+  <ellipse cx="34" cy="47" rx="2" ry="2.5" fill="#fff" />
+  <path d="M15 20q18-12 32 2" stroke-width="3" />
+  
+  <!-- Right Eye -->
+  <path d="M110 42c-5-15-20-22-35-15-10 5-13 15-13 15" />
+  <path d="M107 46c-3 8-12 14-22 12-8-2-13-8-13-12" />
+  <ellipse cx="88" cy="41" rx="9" ry="13" fill="black" />
+  <ellipse cx="85" cy="35" rx="3.5" ry="4.5" fill="#fff" />
+  <ellipse cx="90" cy="47" rx="2" ry="2.5" fill="#fff" />
+  <path d="M105 20q-18-12-32 2" stroke-width="3" />
+</svg>
