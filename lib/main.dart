@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
@@ -80,10 +81,23 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
 
   // Stencil list
   final List<Map<String, String>> _stencils = [
-    {'id': 'cute-cat', 'name': 'Cute Cat', 'path': 'assets/stencils/cute_cat.svg', 'category': 'cute'},
+    {'id': 'stencil-anime-girl', 'name': 'Anime Girl', 'path': 'assets/stencils/stencil_anime_girl.png', 'category': 'anime'},
+    {'id': 'stencil-anime', 'name': 'Anime Warrior', 'path': 'assets/stencils/stencil_anime.png', 'category': 'anime'},
     {'id': 'anime-eyes', 'name': 'Anime Eyes', 'path': 'assets/stencils/anime_eyes.svg', 'category': 'anime'},
-    {'id': 'beautiful-rose', 'name': 'Rose Flower', 'path': 'assets/stencils/beautiful_rose.svg', 'category': 'flowers'},
+    
+    {'id': 'stencil-lion', 'name': 'Majestic Lion', 'path': 'assets/stencils/stencil_lion.png', 'category': 'animals'},
+    {'id': 'stencil-wolf', 'name': 'Wolf Head', 'path': 'assets/stencils/stencil_wolf.png', 'category': 'animals'},
     {'id': 'butterfly', 'name': 'Butterfly', 'path': 'assets/stencils/butterfly.svg', 'category': 'animals'},
+    {'id': 'cute-cat', 'name': 'Cute Cat', 'path': 'assets/stencils/cute_cat.svg', 'category': 'animals'},
+    
+    {'id': 'stencil-rose', 'name': 'Detailed Rose', 'path': 'assets/stencils/stencil_rose.png', 'category': 'art'},
+    {'id': 'stencil-mandala', 'name': 'Mandala Art', 'path': 'assets/stencils/stencil_mandala.png', 'category': 'art'},
+    {'id': 'beautiful-rose', 'name': 'Rose Flower', 'path': 'assets/stencils/beautiful_rose.svg', 'category': 'art'},
+    
+    {'id': 'stencil-eiffel', 'name': 'Eiffel Tower', 'path': 'assets/stencils/stencil_eiffel.png', 'category': 'places'},
+    {'id': 'stencil-castle', 'name': 'Fantasy Castle', 'path': 'assets/stencils/stencil_castle.png', 'category': 'places'},
+    
+    {'id': 'stencil-dragon', 'name': 'Tribal Dragon', 'path': 'assets/stencils/stencil_dragon.png', 'category': 'fantasy'},
     {'id': 'sports-car', 'name': 'Sports Car', 'path': 'assets/stencils/sports_car.svg', 'category': 'vehicles'},
     {'id': 'cute-panda', 'name': 'Cute Panda', 'path': 'assets/stencils/cute_panda.svg', 'category': 'cute'},
   ];
@@ -240,23 +254,142 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
   // Image processing & Picker logic
   // ==========================================================================
   Future<void> _pickCustomImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF101015),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Select Image Source',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined, color: Color(0xFF00F2FE)),
+                  title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _getImage(ImageSource.gallery);
+                  },
+                ),
+                Divider(color: Colors.white.withOpacity(0.05)),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFF8A2BE2)),
+                  title: const Text('Capture with Camera', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _getImage(ImageSource.camera);
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-    final bytes = await pickedFile.readAsBytes();
+  Future<void> _getImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (pickedFile == null) return;
+
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _customImageBytes = bytes;
+        _activeStencil = {
+          'id': 'custom',
+          'name': 'Custom Image',
+          'path': '',
+          'category': 'uploads'
+        };
+        _activeCategory = 'uploads';
+      });
+
+      _processOutline();
+    } catch (e) {
+      debugPrint("Error picking custom image: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error picking photo: $e"),
+            backgroundColor: const Color(0xFFFF3B30),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _selectStencil(Map<String, String> item) async {
     setState(() {
-      _customImageBytes = bytes;
-      _activeStencil = {
-        'id': 'custom',
-        'name': 'Custom Image',
-        'path': '',
-        'category': 'uploads'
-      };
-      _activeCategory = 'uploads';
+      _activeStencil = item;
+      _processedOutlineBytes = null;
+      _customImageBytes = null;
     });
 
-    _processOutline();
+    _resetTransforms();
+
+    final path = item['path']!;
+    if (path.endsWith('.png')) {
+      setState(() {
+        _isProcessingImage = true;
+      });
+      try {
+        final ByteData data = await rootBundle.load(path);
+        final Uint8List bytes = data.buffer.asUint8List();
+
+        final processedBytes = await compute(EdgeDetector.process, {
+          'bytes': bytes,
+          'threshold': _edgeThreshold,
+          'color': _strokeColor.value,
+        });
+
+        setState(() {
+          _customImageBytes = bytes;
+          _processedOutlineBytes = processedBytes;
+          _isProcessingImage = false;
+        });
+      } catch (e) {
+        debugPrint('Failed to process asset PNG stencil: $e');
+        setState(() {
+          _isProcessingImage = false;
+        });
+      }
+    }
   }
 
   Future<void> _processOutline() async {
@@ -441,34 +574,45 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
     );
   }
 
-  // Decides whether to render a vector template, a raw uploaded photo, or an edge-detected image.
   Widget _buildStencilGraphic() {
-    if (_activeStencil?['id'] == 'custom') {
-      if (_isProcessingImage) {
-        return const SizedBox(
-          width: 200,
-          height: 200,
-          child: Center(
-            child: CircularProgressIndicator(color: Color(0xFF00F2FE)),
+    if (_activeStencil == null) return const SizedBox.shrink();
+
+    final isCustom = _activeStencil!['id'] == 'custom';
+    final isPng = _activeStencil!['path']!.endsWith('.png');
+
+    if (_isProcessingImage) {
+      return const SizedBox(
+        width: 200,
+        height: 200,
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00F2FE)),
           ),
-        );
-      }
-      
+        ),
+      );
+    }
+
+    if (isCustom || isPng) {
       if (_outlineFilterMode && _processedOutlineBytes != null) {
         return Image.memory(
           _processedOutlineBytes!,
           width: 300,
           fit: BoxFit.contain,
         );
-      } else if (_customImageBytes != null) {
-        // Raw custom image
+      } else if (isCustom && _customImageBytes != null) {
         return Image.memory(
           _customImageBytes!,
           width: 300,
           fit: BoxFit.contain,
         );
+      } else {
+        return Image.asset(
+          _activeStencil!['path']!,
+          width: 300,
+          fit: BoxFit.contain,
+        );
       }
-    } else if (_activeStencil != null) {
+    } else {
       // Vector SVG stencil
       return SvgPicture.asset(
         _activeStencil!['path']!,
@@ -481,7 +625,6 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
         ),
       );
     }
-    return const SizedBox.shrink();
   }
 
   Widget _buildTopActionBar() {
@@ -493,33 +636,57 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Logo text
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF12121A).withOpacity(0.75),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: RichText(
-              text: const TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'AR',
-                    style: TextStyle(
-                      color: Color(0xFF00F2FE),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F0F14).withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF00F2FE),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Color(0xFF00F2FE), blurRadius: 4),
+                        ],
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: 'tie Sketch',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                    const SizedBox(width: 8),
+                    RichText(
+                      text: const TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'AR',
+                            style: TextStyle(
+                              color: Color(0xFF00F2FE),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'tie Sketch',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -561,136 +728,161 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
     required VoidCallback onTap,
     Color? highlightColor,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: isActive 
-              ? const Color(0xFF00F2FE)
-              : const Color(0xFF12121A).withOpacity(0.75),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isActive 
-                ? const Color(0xFF00F2FE)
-                : highlightColor ?? Colors.white10,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isActive 
+                  ? const Color(0xFF00F2FE)
+                  : const Color(0xFF0F0F14).withOpacity(0.7),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isActive 
+                    ? const Color(0xFF00F2FE)
+                    : highlightColor?.withOpacity(0.4) ?? Colors.white.withOpacity(0.08),
+              ),
+              boxShadow: isActive
+                  ? [BoxShadow(color: const Color(0xFF00F2FE).withOpacity(0.4), blurRadius: 10)]
+                  : null,
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isActive ? Colors.black : Colors.white,
+            ),
           ),
-          boxShadow: isActive
-              ? [BoxShadow(color: const Color(0xFF00F2FE).withOpacity(0.4), blurRadius: 10)]
-              : null,
-        ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: isActive ? Colors.black : Colors.white,
         ),
       ),
     );
   }
 
   Widget _buildControlDrawer(Size size) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
     return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        height: _isDrawerExpanded ? size.height * 0.5 : 72,
+      bottom: bottomPadding + 16,
+      left: 16,
+      right: 16,
+      child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF12121A).withOpacity(0.85),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: const Border(top: BorderSide(color: Colors.white10)),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 16,
+              spreadRadius: 2,
+              offset: const Offset(0, 4),
+            )
+          ]
         ),
         child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: Column(
-            children: [
-              // Header pull bar area
-              GestureDetector(
-                onTap: () => setState(() => _isDrawerExpanded = !_isDrawerExpanded),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              height: _isDrawerExpanded ? size.height * 0.52 : 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F0F14).withOpacity(0.78),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: Column(
+                children: [
+                  // Header pull bar area
+                  GestureDetector(
+                    onTap: () => setState(() => _isDrawerExpanded = !_isDrawerExpanded),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: _activeStencil != null 
-                                        ? const Color(0xFF34C759)
-                                        : Colors.white30,
-                                    shape: BoxShape.circle,
-                                    boxShadow: _activeStencil != null
-                                        ? [BoxShadow(color: const Color(0xFF34C759).withOpacity(0.6), blurRadius: 6)]
-                                        : null,
-                                  ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: _activeStencil != null 
+                                            ? const Color(0xFF00F2FE)
+                                            : Colors.white30,
+                                        shape: BoxShape.circle,
+                                        boxShadow: _activeStencil != null
+                                            ? [BoxShadow(color: const Color(0xFF00F2FE).withOpacity(0.6), blurRadius: 6)]
+                                            : null,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _activeStencil != null
+                                          ? _activeStencil!['name']!
+                                          : 'No stencil selected',
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _activeStencil != null
-                                      ? _activeStencil!['name']!
-                                      : 'No stencil selected',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                                ),
+                                Icon(
+                                  _isDrawerExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                                  color: Colors.white60,
+                                )
                               ],
                             ),
-                            Icon(
-                              _isDrawerExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
-                              color: Colors.white60,
-                            )
-                          ],
-                        ),
-                      )
-                    ],
+                          )
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+  
+                  if (_isDrawerExpanded) ...[
+                    // Tabs Navigation
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.06))),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildTabBtn(id: 'library', label: 'Library', icon: Icons.layers_outlined),
+                          _buildTabBtn(id: 'adjustments', label: 'Adjustments', icon: Icons.tune),
+                        ],
+                      ),
+                    ),
+  
+                    // Content Panel
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: _activeTab == 'library' 
+                            ? _buildLibraryTab() 
+                            : _buildAdjustmentsTab(),
+                      ),
+                    )
+                  ]
+                ],
               ),
-
-              if (_isDrawerExpanded) ...[
-                // Tabs Navigation
-                Container(
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.white10)),
-                  ),
-                  child: Row(
-                    children: [
-                      _buildTabBtn(id: 'library', label: 'Library', icon: Icons.layers_outlined),
-                      _buildTabBtn(id: 'adjustments', label: 'Adjustments', icon: Icons.tune),
-                    ],
-                  ),
-                ),
-
-                // Content Panel
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _activeTab == 'library' 
-                        ? _buildLibraryTab() 
-                        : _buildAdjustmentsTab(),
-                  ),
-                )
-              ]
-            ],
+            ),
           ),
         ),
       ),
@@ -703,27 +895,36 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _activeTab = id),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive ? const Color(0xFF00F2FE) : Colors.transparent,
-                width: 2,
-              )
-            )
+            color: isActive 
+                ? const Color(0xFF00F2FE).withOpacity(0.08) 
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isActive ? const Color(0xFF00F2FE).withOpacity(0.3) : Colors.transparent,
+              width: 1,
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: isActive ? const Color(0xFF00F2FE) : Colors.white60),
+              Icon(
+                icon, 
+                size: 16, 
+                color: isActive ? const Color(0xFF00F2FE) : Colors.white60
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   color: isActive ? const Color(0xFF00F2FE) : Colors.white60,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 13,
+                  letterSpacing: 0.3,
                 ),
               )
             ],
@@ -734,10 +935,8 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
   }
 
   Widget _buildLibraryTab() {
-    // Filter categories list
-    final categories = ['all', 'anime', 'animals', 'cute', 'vehicles', 'uploads'];
+    final categories = ['all', 'anime', 'animals', 'art', 'places', 'fantasy', 'vehicles', 'cute', 'uploads'];
     
-    // Filter items
     final filtered = _stencils.where((item) {
       if (_activeCategory == 'all') return true;
       return item['category'] == _activeCategory;
@@ -751,27 +950,45 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final cat = categories[index];
               final isCatActive = _activeCategory == cat;
               return GestureDetector(
                 onTap: () => setState(() => _activeCategory = cat),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isCatActive ? const Color(0x1A00F2FE) : const Color(0x0DFFFFFF),
+                    gradient: isCatActive 
+                        ? const LinearGradient(
+                            colors: [Color(0xFF00F2FE), Color(0xFF8A2BE2)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    color: isCatActive ? null : const Color(0x0DFFFFFF),
                     border: Border.all(
-                      color: isCatActive ? const Color(0xFF00F2FE) : Colors.white10,
+                      color: isCatActive ? Colors.transparent : Colors.white.withOpacity(0.08),
                     ),
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: isCatActive 
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF00F2FE).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
                   ),
                   child: Text(
                     cat.toUpperCase(),
                     style: TextStyle(
-                      color: isCatActive ? const Color(0xFF00F2FE) : Colors.white60,
-                      fontWeight: FontWeight.w600,
+                      color: isCatActive ? Colors.black : Colors.white60,
+                      fontWeight: FontWeight.bold,
                       fontSize: 11,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
@@ -788,7 +1005,7 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
               crossAxisCount: 3,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: 1.0,
+              childAspectRatio: 0.95,
             ),
             itemCount: filtered.length + 1, // +1 for the upload button
             itemBuilder: (context, index) {
@@ -796,19 +1013,55 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
                 // Custom Upload Card
                 return GestureDetector(
                   onTap: _pickCustomImage,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00F2FE).withOpacity(0.02),
-                      border: Border.all(color: const Color(0xFF00F2FE).withOpacity(0.2), style: BorderStyle.solid),
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF00F2FE).withOpacity(0.05),
+                          const Color(0xFF8A2BE2).withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF00F2FE).withOpacity(0.25),
+                        width: 1.2,
+                      ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.photo_library_outlined, color: const Color(0xFF00F2FE).withOpacity(0.8), size: 24),
-                        const SizedBox(height: 4),
-                        const Text('Upload Photo', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                        const Text('Auto Outline', style: TextStyle(fontSize: 8, color: Colors.white30)),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00F2FE).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.add_photo_alternate_outlined, 
+                            color: Color(0xFF00F2FE), 
+                            size: 24
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Upload Photo', 
+                          style: TextStyle(
+                            fontSize: 10, 
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          )
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Camera / Gallery', 
+                          style: TextStyle(
+                            fontSize: 8, 
+                            color: Colors.white30,
+                          )
+                        ),
                       ],
                     ),
                   ),
@@ -819,38 +1072,59 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
               final isSelected = _activeStencil != null && _activeStencil!['id'] == item['id'];
 
               return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _activeStencil = item;
-                    _processedOutlineBytes = null;
-                  });
-                  _resetTransforms();
-                },
-                child: Container(
+                onTap: () => _selectStencil(item),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0x1400F2FE) : const Color(0x0DFFFFFF),
+                    color: isSelected 
+                        ? const Color(0xFF00F2FE).withOpacity(0.06) 
+                        : const Color(0xFF12121A).withOpacity(0.4),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF00F2FE) : Colors.white10,
+                      color: isSelected 
+                          ? const Color(0xFF00F2FE).withOpacity(0.6) 
+                          : Colors.white.withOpacity(0.06),
                       width: isSelected ? 1.5 : 1.0,
                     ),
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF00F2FE).withOpacity(0.15),
+                              blurRadius: 10,
+                              spreadRadius: -2,
+                            )
+                          ]
+                        : null,
                   ),
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   child: Column(
                     children: [
                       Expanded(
-                        child: SvgPicture.asset(
-                          item['path']!,
-                          colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          child: item['path']!.endsWith('.svg')
+                              ? SvgPicture.asset(
+                                  item['path']!,
+                                  colorFilter: ColorFilter.mode(
+                                    isSelected ? const Color(0xFF00F2FE) : Colors.white70,
+                                    BlendMode.srcIn,
+                                  ),
+                                )
+                              : Image.asset(
+                                  item['path']!,
+                                  fit: BoxFit.contain,
+                                  color: isSelected ? const Color(0xFF00F2FE) : Colors.white70,
+                                  colorBlendMode: BlendMode.srcIn,
+                                ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         item['name']!,
                         style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: isSelected ? const Color(0xFF00F2FE) : Colors.white60,
+                          fontSize: 10,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected ? const Color(0xFF00F2FE) : Colors.white70,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -934,8 +1208,8 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
         
         const Divider(color: Colors.white10, height: 32),
 
-        // Settings unique to custom uploads
-        if (_activeStencil?['id'] == 'custom') ...[
+        // Settings unique to custom uploads or PNG templates
+        if (_activeStencil?['id'] == 'custom' || _activeStencil?['path']?.endsWith('.png') == true) ...[
           const Text(
             'Outline Filter Settings',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white70),
@@ -992,12 +1266,14 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
         Row(
           children: [
             _buildColorDot(const Color(0xFF000000), 'Black'),
-            const SizedBox(width: 16),
-            _buildColorDot(const Color(0xFFFF3B30), 'Red'),
-            const SizedBox(width: 16),
-            _buildColorDot(const Color(0xFF34C759), 'Green'),
-            const SizedBox(width: 16),
-            _buildColorDot(const Color(0xFF007AFF), 'Blue'),
+            const SizedBox(width: 14),
+            _buildColorDot(const Color(0xFF00F2FE), 'Neon Cyan'),
+            const SizedBox(width: 14),
+            _buildColorDot(const Color(0xFFFF2A54), 'Neon Pink'),
+            const SizedBox(width: 14),
+            _buildColorDot(const Color(0xFF39FF14), 'Neon Green'),
+            const SizedBox(width: 14),
+            _buildColorDot(const Color(0xFFFFD700), 'Gold'),
           ],
         ),
         const SizedBox(height: 24),
@@ -1042,32 +1318,46 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
     bool isDanger = false,
     required VoidCallback onTap,
   }) {
-    Color border = isDanger 
-        ? const Color(0xFFFF3B30).withOpacity(0.2) 
-        : Colors.white10;
-    Color text = isDanger ? const Color(0xFFFF3B30) : Colors.white;
-    
+    Color bg = const Color(0xFF12121A).withOpacity(0.4);
+    Color border = Colors.white.withOpacity(0.06);
+    Color text = Colors.white70;
+    Color iconColor = Colors.white60;
+
     if (isActive) {
-      border = const Color(0xFF00F2FE);
+      bg = const Color(0xFF00F2FE).withOpacity(0.08);
+      border = const Color(0xFF00F2FE).withOpacity(0.4);
       text = const Color(0xFF00F2FE);
+      iconColor = const Color(0xFF00F2FE);
+    } else if (isDanger) {
+      bg = const Color(0xFFFF3B30).withOpacity(0.04);
+      border = const Color(0xFFFF3B30).withOpacity(0.25);
+      text = const Color(0xFFFF3B30);
+      iconColor = const Color(0xFFFF3B30);
     }
-    
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isActive 
-              ? const Color(0x0A00F2FE) 
-              : const Color(0x0DFFFFFF),
+          color: bg,
           border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 16, color: text),
+            Icon(icon, size: 16, color: iconColor),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 10, color: text, fontWeight: FontWeight.w600)),
+            Text(
+              label, 
+              style: TextStyle(
+                fontSize: 10, 
+                color: text, 
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              )
+            ),
           ],
         ),
       ),
@@ -1080,121 +1370,151 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
     return GestureDetector(
       onTap: () {
         setState(() => _strokeColor = color);
-        if (_activeStencil?['id'] == 'custom') {
+        final isPng = _activeStencil?['path']?.endsWith('.png') ?? false;
+        final isCustom = _activeStencil?['id'] == 'custom';
+        if (isCustom || isPng) {
           _processOutline();
         }
       },
-      child: Container(
-        width: 32,
-        height: 32,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 34,
+        height: 34,
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
             color: isSelected ? Colors.white : Colors.white24,
-            width: isSelected ? 2.5 : 1.0,
+            width: isSelected ? 3.0 : 1.0,
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: color.withOpacity(0.4), blurRadius: 8)]
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.5),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  )
+                ]
               : null,
         ),
       ),
     );
   }
 
-  // Floating Full Screen Drawing Lock Overlay UI
   Widget _buildLockScreenOverlay() {
     return Positioned.fill(
-      child: Container(
-        color: Colors.black.withOpacity(0.95),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Glowing pulsing lock icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF00F2FE), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF00F2FE).withOpacity(0.25),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    )
-                  ],
-                ),
-                child: const Icon(
-                  Icons.lock_outline,
-                  color: Color(0xFF00F2FE),
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Drawing Mode Locked',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Hold the unlock button for 2 seconds to release controls',
-                style: TextStyle(fontSize: 13, color: Colors.white54),
-              ),
-              const SizedBox(height: 48),
-
-              // Animated long press unlock button
-              GestureDetector(
-                onTapDown: (_) => _startUnlockTimer(),
-                onTapUp: (_) => _stopUnlockTimer(),
-                onTapCancel: _stopUnlockTimer,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Circular progress tracker
-                    SizedBox(
-                      width: 140,
-                      height: 140,
-                      child: AnimatedBuilder(
-                        animation: _unlockProgressController,
-                        builder: (context, child) {
-                          return CircularProgressIndicator(
-                            value: _unlockProgressController.value,
-                            strokeWidth: 4.0,
-                            backgroundColor: Colors.white12,
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00F2FE)),
-                          );
-                        },
-                      ),
+      child: Stack(
+        children: [
+          // 1. Top status indicator
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 16,
+            right: 16,
+            child: Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF3B30).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFFF3B30).withOpacity(0.3)),
                     ),
-                    // Unlock button
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF12121A),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          _isHoldingUnlock ? 'HOLDING...' : 'HOLD TO\nUNLOCK',
-                          textAlign: TextAlign.center,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.lock_outline, color: Color(0xFFFF3B30), size: 16),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Canvas Locked (Gestures Disabled)',
                           style: TextStyle(
-                            color: _isHoldingUnlock ? const Color(0xFF00F2FE) : Colors.white70,
+                            color: Color(0xFFFF3B30),
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          
+          // 2. Bottom hold-to-unlock button
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 24,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTapDown: (_) => _startUnlockTimer(),
+                    onTapUp: (_) => _stopUnlockTimer(),
+                    onTapCancel: _stopUnlockTimer,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F0F14).withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: _isHoldingUnlock 
+                                  ? const Color(0xFF00F2FE) 
+                                  : Colors.white.withOpacity(0.1),
+                              width: 1.5,
+                            ),
+                            boxShadow: _isHoldingUnlock
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF00F2FE).withOpacity(0.4),
+                                      blurRadius: 12,
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Circular progress indicator inside button
+                              SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  value: _unlockProgressController.value,
+                                  strokeWidth: 2.5,
+                                  backgroundColor: Colors.white10,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00F2FE)),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                _isHoldingUnlock ? 'HOLDING...' : 'HOLD TO UNLOCK',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    )
-                  ],
-                ),
-              )
-            ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
