@@ -1308,6 +1308,56 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
           ],
         ),
         const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00F2FE).withOpacity(0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF00F2FE).withOpacity(0.15)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.lightbulb_outline, color: Color(0xFF00F2FE), size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Quick Drawing Tips',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: const Color(0xFF00F2FE).withOpacity(0.9),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildTipItem('Adjust opacity if the stencil blocks your hand view.'),
+              const SizedBox(height: 4),
+              _buildTipItem('Double-tap the stencil to reset zoom/position.'),
+              const SizedBox(height: 4),
+              _buildTipItem('Use Neon colors for tracing on white paper.'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildTipItem(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('• ', style: TextStyle(color: Color(0xFF00F2FE), fontWeight: FontWeight.bold)),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 11, color: Colors.white60),
+          ),
+        ),
       ],
     );
   }
