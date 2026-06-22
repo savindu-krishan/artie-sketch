@@ -8,7 +8,8 @@ const ASSETS_TO_CACHE = [
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/screenshot1.png',
-  './assets/screenshot2.png'
+  './assets/screenshot2.png',
+  './assets/screenshot-mobile.png'
 ];
 
 // Install Event - cache core static resources

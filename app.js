@@ -320,25 +320,69 @@ async function startCameraStream() {
   }
 
   const device = appState.videoDevices[appState.currentVideoDeviceIndex];
-  // Basic constraints setup
-  const constraints = {
-    audio: false,
-    video: {
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
-    }
-  };
+  
+  // Define a sequence of constraints to try, from most specific to absolute fallback
+  const constraintOptions = [];
 
-  // If we have a specific device, use it. Otherwise request environment camera.
-  if (device) {
-    constraints.video.deviceId = { exact: device.deviceId };
-  } else {
-    constraints.video.facingMode = { ideal: "environment" };
+  if (device && device.deviceId) {
+    // 1. Specific device with high resolution
+    constraintOptions.push({
+      audio: false,
+      video: {
+        deviceId: { exact: device.deviceId },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    });
+    // 2. Specific device with no resolution limits
+    constraintOptions.push({
+      audio: false,
+      video: {
+        deviceId: { exact: device.deviceId }
+      }
+    });
   }
 
-  try {
-    placeholderEl.querySelector('p').textContent = "Connecting to camera...";
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  // 3. Environment camera (back) with resolution
+  constraintOptions.push({
+    audio: false,
+    video: {
+      facingMode: "environment",
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
+  });
+
+  // 4. Environment camera (back) simple constraint - Highly compatible!
+  constraintOptions.push({
+    audio: false,
+    video: {
+      facingMode: "environment"
+    }
+  });
+
+  // 5. Absolute fallback - any video stream
+  constraintOptions.push({
+    audio: false,
+    video: true
+  });
+
+  let stream = null;
+  let lastError = null;
+
+  for (const constraints of constraintOptions) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (stream) {
+        break; // Success!
+      }
+    } catch (err) {
+      console.warn("Camera constraint failed, trying next fallback...", err.name);
+      lastError = err;
+    }
+  }
+
+  if (stream) {
     appState.cameraStream = stream;
     videoEl.srcObject = stream;
     
@@ -349,9 +393,9 @@ async function startCameraStream() {
       appState.isCameraRunning = true;
       cameraToggleBtn.classList.remove('active');
     };
-  } catch (err) {
-    console.error("Camera access denied or failed:", err);
-    showCameraError(err);
+  } else {
+    console.error("All camera constraints failed:", lastError);
+    showCameraError(lastError);
   }
 }
 
