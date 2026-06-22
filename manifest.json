@@ -1,12 +1,26 @@
 {
+  "id": "https://savindu-krishan.github.io/artie-sketch/",
   "name": "ARtie Sketch - AR Drawing Lab",
   "short_name": "ARtie Sketch",
   "description": "Trace and sketch drawings using your camera overlay",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "fullscreen",
+    "minimal-ui"
+  ],
   "background_color": "#0d0d12",
   "theme_color": "#0d0d12",
   "orientation": "portrait",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "graphics",
+    "photo",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "./assets/icon-192.png",
@@ -19,6 +33,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./assets/screenshot1.png",
+      "sizes": "1920x945",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "ARtie Sketch Home Screen"
+    },
+    {
+      "src": "./assets/screenshot2.png",
+      "sizes": "1920x945",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Trace Settings & Adjustments Panel"
     }
   ]
 }

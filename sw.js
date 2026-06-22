@@ -6,7 +6,9 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './manifest.json',
   './assets/icon-192.png',
-  './assets/icon-512.png'
+  './assets/icon-512.png',
+  './assets/screenshot1.png',
+  './assets/screenshot2.png'
 ];
 
 // Install Event - cache core static resources
