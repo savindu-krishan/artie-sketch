@@ -319,6 +319,29 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
 
   Future<void> _getImage(ImageSource source) async {
     try {
+      if (source == ImageSource.gallery) {
+        // Request gallery permissions explicitly (Permission.photos for Android 13+, Permission.storage for older versions)
+        final statusPhotos = await Permission.photos.request();
+        final statusStorage = await Permission.storage.request();
+        if (!statusPhotos.isGranted && !statusStorage.isGranted) {
+          // Some custom ROMs or devices might block, let's warn but still attempt, or stop if strictly required
+          debugPrint("Gallery permissions not fully granted, attempting pick anyway.");
+        }
+      } else if (source == ImageSource.camera) {
+        final statusCamera = await Permission.camera.request();
+        if (!statusCamera.isGranted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Camera permission is required to capture photos."),
+                backgroundColor: Color(0xFFFF3B30),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: source,
@@ -415,6 +438,14 @@ class _ARDrawingScreenState extends State<ARDrawingScreen> with TickerProviderSt
       setState(() {
         _isProcessingImage = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error processing image outline: $e"),
+            backgroundColor: const Color(0xFFFF3B30),
+          ),
+        );
+      }
     }
   }
 
