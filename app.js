@@ -287,6 +287,14 @@ function centerStencil() {
 // 4. Camera Stream Handling
 // ==========================================================================
 async function initCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showCameraError({
+      name: "SecurityError / API Blocked",
+      message: "Camera API is unavailable. This usually happens when the web page is opened via a non-secure connection (HTTP instead of HTTPS) or is not supported by your current mobile browser."
+    });
+    return;
+  }
+  
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     appState.videoDevices = devices.filter(d => d.kind === 'videoinput');
